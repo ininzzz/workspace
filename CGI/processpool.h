@@ -74,7 +74,7 @@ private:
 template<typename T>
 processpool<T>* processpool<T>::m_instance=NULL;
 
-// 用于处理信号的管道，以实现统一事件源。后面称之为信号管道
+// 用于处理信号的管道，以实现统一事件源。
 static int sig_pipefd[2];
 
 static int setnonblocking(int fd){
@@ -264,11 +264,13 @@ void processpool<T>::run_parent(){
             int sockfd=events[i].data.fd;
             if(sockfd==m_listenfd){
                 // 如果有新连接的到来，就采用Round Robin方式将其分配一个子进程处理
+                // 即每个进程轮流处理新的连接
                 int i=sub_process_counter;
                 do{
                     if(m_sub_process[i].m_pid!=-1) break;
                     i++;i%=m_process_number;
                 } while(i!=sub_process_counter);
+                // 如果所有子进程都被关闭了，则父进程也退出
                 if(m_sub_process[i].m_pid==-1){
                     m_stop=true;
                     break;
@@ -309,7 +311,6 @@ void processpool<T>::run_parent(){
                         case SIGTERM:
                         case SIGINT:{
                             // 如果父进程接收到终止信号，那么就杀死所有子进程，并等待他们全部结束
-                            // 当然，通知子进程结束更好的方法是向父子进程之间的通信管道发送特殊数据，读者不妨自己实现之
                             printf("kill all the child now\n");
                             for(int i=0;i<m_process_number;i++){
                                 int pid=m_sub_process[i].m_pid;

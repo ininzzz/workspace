@@ -82,5 +82,19 @@ GROUP BY S.xh) AS temp2
 -- 二者根据cnt取交集，cnt相等说明所有课的成绩大于平均成绩
 WHERE temp1.cnt=temp2.cnt AND temp1.xh=temp2.xh;
 
+SELECT S.xh,S.xm
+FROM S,(SELECT yxh,AVG(Year(NOW())-Year(csrq)) AS avgage FROM S AS S1 GROUP BY yxh) AS temps
+WHERE
+NOT EXISTS
+(
+    SELECT * FROM E as E1 WHERE S.xh=E1.xh AND EXISTS(
+        SELECT * FROM
+        (SELECT kh,avg(cj) as avjcj FROM E GROUP BY kh) AS tempe
+        WHERE E1.cj<tempe.avg_cj AND E1.kh=tempe.kh
+    )
+)
+AND temps.yxh=s.yxh
+AND (Year(NOW()))
+
 
 -- 4.
